@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import "./ExploreContainer.css";
 import {
   IonFab,
@@ -14,6 +14,12 @@ import {
   IonCol,
   IonRow,
   IonImg,
+  IonModal,
+  IonButton,
+  IonHeader,
+  IonToolbar,
+  IonButtons,
+  IonTitle,
 } from "@ionic/react";
 import {
   share,
@@ -60,6 +66,8 @@ const items = [
 ];
 
 const ExploreContainer: React.FC<ContainerProps> = () => {
+  const [showModal, setShowModal] = useState(false);
+
   // TODO: Allow configureable multi column layout
   const albums = items.map((item, index) => {
     return (
@@ -93,16 +101,32 @@ const ExploreContainer: React.FC<ContainerProps> = () => {
         </IonFabButton>
         <IonFabList side='start'>
           <IonFabButton>
-            <IonIcon icon={albumsOutline} />
+            <IonIcon icon={albumsOutline} onClick={() => setShowModal(true)} />
           </IonFabButton>
           <IonFabButton>
-            <IonIcon icon={imageOutline} />
+            <IonIcon icon={imageOutline} onClick={() => setShowModal(true)} />
           </IonFabButton>
-          <IonFabButton>
+          <IonFabButton onClick={() => setShowModal(true)}>
             <IonIcon icon={searchOutline} />
           </IonFabButton>
         </IonFabList>
       </IonFab>
+
+      <IonModal
+        isOpen={showModal}
+        swipeToClose={true}
+        onDidDismiss={() => setShowModal(false)}
+      >
+        <IonHeader translucent>
+          <IonToolbar>
+            <IonTitle>Upload something</IonTitle>
+            <IonButtons slot='end'>
+              <IonButton onClick={() => setShowModal(false)}>Close</IonButton>
+            </IonButtons>
+          </IonToolbar>
+        </IonHeader>
+        <IonButton onClick={() => setShowModal(false)}>Close Modal</IonButton>
+      </IonModal>
     </IonContent>
   );
 };

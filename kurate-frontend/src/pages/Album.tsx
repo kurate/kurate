@@ -10,6 +10,7 @@ import {
 import React from "react";
 import "./Album.css";
 import { useParams } from "react-router";
+import AlbumContainer from "../components/AlbumContainer";
 
 const Album: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -31,7 +32,7 @@ const Album: React.FC = () => {
             <IonTitle size='large'>{id}</IonTitle>
           </IonToolbar>
         </IonHeader>
-        <h1>TODO: Put content of album with id {id}</h1>
+        <AlbumContainer name={id} />
       </IonContent>
     </IonPage>
   );
