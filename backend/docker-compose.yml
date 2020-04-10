@@ -1,13 +1,15 @@
 version: '3'
 services:
-#  kurate:
-#    build:
-#      context: .
-#      dockerfile: Dockerfile
-#    depends_on:
-#      - mariadb
-#    ports:
-#      - "8080:8080"
+  kurate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - mongo
+    ports:
+      - "8338:8338"
+    networks:
+      - backend_network
   mongo:
     image: mongo
     restart: always
@@ -16,3 +18,9 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: password
     ports:
       - "27017:27017"
+    networks:
+      - backend_network
+
+networks:
+  backend_network:
+    driver: bridge
