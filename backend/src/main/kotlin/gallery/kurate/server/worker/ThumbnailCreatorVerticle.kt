@@ -38,7 +38,10 @@ class ThumbnailCreatorVerticle : AbstractVerticle(), KoinComponent {
           val thumbnailUri = imageStore.put(bytes)
           thumbnailRepository.addThumbnail(imageId, size, size.dimension, thumbnailUri)
             .subscribeOn(Schedulers.io())
-            .subscribe()
+            .subscribe(
+              { thumbnail -> logger.debug("created thumbnail ${thumbnail.encode()}") },
+              { throwable -> logger.error("Failed to create thumbnail", throwable) }
+            )
         }
     }
   }
