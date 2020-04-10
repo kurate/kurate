@@ -1,0 +1,88 @@
+plugins {
+  id 'org.jetbrains.kotlin.jvm' version '1.3.61'
+  id 'application'
+  id 'com.github.johnrengelman.shadow' version '5.2.0'
+}
+
+group = 'gallery.kurate'
+version = '0.0.1'
+
+repositories {
+  mavenCentral()
+  jcenter()
+  maven { url 'https://jitpack.io' }
+}
+
+ext {
+  junitJupiterEngineVersion = '5.5.2'
+  vertxVersion = '3.9.0'
+  rxKotlinVersion = '2.4.0'
+  mariaDbClientVersion = '2.5.3'
+  slf4jVersion = '1.7.30'
+  gimbapVersion = '3.0.0'
+  thumbnail4jVersion = "2.0.2"
+}
+
+application {
+  mainClassName = 'io.vertx.core.Launcher'
+  applicationDefaultJvmArgs = ["-Dvertx.logger-delegate-factory-class-name=io.vertx.core.logging.SLF4JLogDelegateFactory"]
+}
+
+
+def mainVerticleName = 'gallery.kurate.server.BootstrapVerticle'
+def watchForChange = 'src/**/*'
+def doOnChange = './gradlew classes'
+
+dependencies {
+  implementation "io.vertx:vertx-core:$vertxVersion"
+  implementation "io.vertx:vertx-config:$vertxVersion"
+  implementation "io.vertx:vertx-rx-java2:$vertxVersion"
+  implementation "io.vertx:vertx-web:$vertxVersion"
+  implementation "io.vertx:vertx-web-api-contract:$vertxVersion"
+  implementation "io.vertx:vertx-web-templ-handlebars:$vertxVersion"
+  implementation "io.vertx:vertx-mongo-client:$vertxVersion"
+  implementation "io.vertx:vertx-lang-kotlin:$vertxVersion"
+
+  implementation "io.reactivex.rxjava2:rxkotlin:$rxKotlinVersion"
+  implementation "com.github.wowselim:gimbap:$gimbapVersion"
+  implementation "com.github.wowselim:thumbnail4j:$thumbnail4jVersion"
+
+  implementation "org.koin:koin-core:2.0.1"
+
+  // logging
+  compileOnly "org.slf4j:slf4j-api:$slf4jVersion"
+  runtimeOnly "org.slf4j:slf4j-simple:$slf4jVersion"
+
+  testImplementation "io.vertx:vertx-junit5:$vertxVersion"
+  testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitJupiterEngineVersion"
+  testImplementation "org.junit.jupiter:junit-jupiter-api:$junitJupiterEngineVersion"
+}
+
+compileKotlin {
+  kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8
+}
+
+compileTestKotlin {
+  kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8
+}
+
+
+shadowJar {
+  manifest {
+    attributes 'Main-Verticle': mainVerticleName
+  }
+  mergeServiceFiles {
+    include 'META-INF/services/io.vertx.core.spi.VerticleFactory'
+  }
+}
+
+test {
+  useJUnitPlatform()
+  testLogging {
+    events 'PASSED', 'FAILED', 'SKIPPED'
+  }
+}
+
+run {
+  args = ['run', mainVerticleName, "--redeploy=$watchForChange", "--launcher-class=$mainClassName", "--on-redeploy=$doOnChange"]
+}
