@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./AlbumContainer.css";
+import { chunk } from "lodash";
 import {
   IonFab,
   IonFabButton,
@@ -17,7 +18,11 @@ import {
   IonTitle,
   IonCard,
   IonLoading,
-  IonToast,
+  IonInput,
+  IonContent,
+  IonList,
+  IonItem,
+  IonLabel,
 } from "@ionic/react";
 import {
   share,
@@ -61,7 +66,7 @@ const AlbumContainer: React.FC<AlbumProps> = (props: AlbumProps) => {
     }
 
     fetchAlbum();
-  });
+  }, [props._id]);
 
   // TODO: Use loading state instead
   if (loading) {
@@ -70,52 +75,48 @@ const AlbumContainer: React.FC<AlbumProps> = (props: AlbumProps) => {
     );
   }
 
-  // TODO: ERROR STUFF
-  if (error != null) {
+  // TODO: ERROR STUFF (TOAST)
+  if (error) {
     return (
       <>
-        <h2>Error</h2>
-        <IonToast isOpen={true} message={error} />
-      </>
-    );
-  }
-  if (album == null) {
-    return (
-      <>
-        <h2>Error</h2>
-        <IonToast isOpen={true} message={"Error fetching"} />
+        <h2>Error when fetching</h2>
       </>
     );
   }
 
+  if (album == null) {
+    return (
+      <>
+        <h2>Error album null</h2>
+      </>
+    );
+  }
+
+  const chunked = chunk(album.photos, 2);
+
+  const rows = chunked.map((chunk, index) => {
+    return (
+      <IonRow>
+        {chunk.map((photo, index) => {
+          return (
+            <IonCol>
+              <IonCard routerLink={KURATE_URLS.Home}>
+                <IonImg src={photo.uri} />
+              </IonCard>
+            </IonCol>
+          );
+        })}
+      </IonRow>
+    );
+  });
+
   return (
-    <div id='single-album-content'>
-      <IonGrid>
-        <IonRow>
-          <IonCol>
-            <IonCard routerLink={KURATE_URLS.Home}>
-              <IonImg src={album.photos[0].uri} />
-            </IonCard>
-          </IonCol>
-          <IonCol>
-            <IonCard routerLink={KURATE_URLS.Home}>
-              <IonImg src={album.photos[1].uri} />
-            </IonCard>
-          </IonCol>
-        </IonRow>
-        <IonRow>
-          <IonCol>
-            <IonCard routerLink={KURATE_URLS.Home}>
-              <IonImg src={album.photos[2].uri} />
-            </IonCard>
-          </IonCol>
-          <IonCol>
-            <IonCard routerLink={KURATE_URLS.Home}>
-              <IonImg src={album.photos[3].uri} />
-            </IonCard>
-          </IonCol>
-        </IonRow>
-      </IonGrid>
+    <>
+      {album.photos == null || album.photos.length < 1 ? (
+        <h2>No photos yet.</h2>
+      ) : (
+        <IonGrid>{rows}</IonGrid>
+      )}
 
       <IonFab vertical='bottom' horizontal='end' slot='fixed'>
         <IonFabButton>
@@ -134,22 +135,74 @@ const AlbumContainer: React.FC<AlbumProps> = (props: AlbumProps) => {
         </IonFabList>
       </IonFab>
 
-      <IonModal
-        isOpen={showModal}
-        swipeToClose={true}
-        onDidDismiss={() => setShowModal(false)}
-      >
-        <IonHeader translucent>
-          <IonToolbar>
-            <IonTitle>Upload something</IonTitle>
-            <IonButtons slot='end'>
-              <IonButton onClick={() => setShowModal(false)}>Close</IonButton>
-            </IonButtons>
-          </IonToolbar>
-        </IonHeader>
-        <IonButton onClick={() => setShowModal(false)}>Close Modal</IonButton>
-      </IonModal>
-    </div>
+      <UploadAlbumModal
+        showModal={showModal}
+        onClose={() => {
+          setShowModal(false);
+        }}
+      />
+    </>
+  );
+};
+
+export const UploadAlbumModal = (props: {
+  showModal: boolean;
+  onClose: () => void;
+}) => {
+  const [name, setName] = useState("");
+
+  const handleSubmit = (event: any) => {
+    event.preventDefault();
+    props.onClose();
+
+    console.log(`Submitting Name ${name}`);
+    postNewAlbum();
+  };
+
+  async function postNewAlbum() {
+    await fetch(KURATE_API.AlbumList, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name }),
+    });
+  }
+
+  return (
+    <IonModal
+      isOpen={props.showModal}
+      swipeToClose={true}
+      onDidDismiss={props.onClose}
+    >
+      <IonHeader translucent>
+        <IonToolbar>
+          <IonTitle>Upload new photo</IonTitle>
+          <IonButtons slot='end'>
+            <IonButton onClick={props.onClose}>Close</IonButton>
+          </IonButtons>
+        </IonToolbar>
+      </IonHeader>
+      <IonContent fullscreen>
+        <form onSubmit={handleSubmit}>
+          <IonList>
+            <IonItem>
+              <IonLabel position='floating'>Name</IonLabel>
+              <IonInput
+                value={name}
+                placeholder='Enter Input'
+                onIonChange={(e) => setName(e.detail.value!)}
+                clearInput
+              ></IonInput>
+            </IonItem>
+          </IonList>
+          <IonButton expand='block' type='submit'>
+            Create album
+          </IonButton>
+        </form>
+      </IonContent>
+    </IonModal>
   );
 };
 

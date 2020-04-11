@@ -20,7 +20,12 @@ import {
   IonButtons,
   IonTitle,
   IonLoading,
-  IonToast,
+  IonInput,
+  IonList,
+  IonItem,
+  IonContent,
+  IonLabel,
+  IonSkeletonText,
 } from "@ionic/react";
 import {
   share,
@@ -82,14 +87,14 @@ const ExploreContainer: React.FC<ContainerProps> = () => {
           isLoading(false);
         })
         .catch((err) => {
-          console.log(err);
+          console.log("Fetch error: " + err);
           setError("Can't fetch.");
           isLoading(false);
         });
     }
 
     fetchAlbums();
-  });
+  }, []);
 
   // TODO: Use loading state instead
   if (loading) {
@@ -99,19 +104,17 @@ const ExploreContainer: React.FC<ContainerProps> = () => {
   }
 
   // TODO: ERROR STUFF
-  if (error != null) {
+  if (error) {
     return (
       <>
-        <h2>Error</h2>
-        <IonToast isOpen={true} message={error} />
+        <h2>Error when fetching</h2>
       </>
     );
   }
   if (albums == null) {
     return (
       <>
-        <h2>Error</h2>
-        <IonToast isOpen={true} message={"Error fetching"} />
+        <h2>Error album null</h2>
       </>
     );
   }
@@ -122,11 +125,18 @@ const ExploreContainer: React.FC<ContainerProps> = () => {
       <IonRow key={index}>
         <IonCol>
           <IonCard routerLink={KURATE_URLS.Album(item._id)}>
-            <IonImg
-              src={item.photos[0].uri}
-              onIonError={(e) => console.log(e)}
-              onIonImgDidLoad={(e) => console.log(e)}
-            />
+            {item.photos != null && item.photos[0] != null ? (
+              // TODO: Use animated skeleton below as loading indicator
+              <IonImg
+                src={item.photos[0].uri}
+                onIonImgDidLoad={(e) => {
+                  console.log(e);
+                }}
+              />
+            ) : (
+              // Empty image placeholder
+              <IonSkeletonText style={{ height: "200px", margin: 0 }} />
+            )}
             <IonCardHeader>
               <IonCardSubtitle>
                 From {new Date(item.date).toLocaleDateString()}
@@ -140,7 +150,7 @@ const ExploreContainer: React.FC<ContainerProps> = () => {
   });
 
   return (
-    <div id='albums-content'>
+    <>
       <IonGrid>{albumCards}</IonGrid>
 
       <IonFab vertical='bottom' horizontal='end' slot='fixed'>
@@ -160,22 +170,74 @@ const ExploreContainer: React.FC<ContainerProps> = () => {
         </IonFabList>
       </IonFab>
 
-      <IonModal
-        isOpen={showModal}
-        swipeToClose={true}
-        onDidDismiss={() => setShowModal(false)}
-      >
-        <IonHeader translucent>
-          <IonToolbar>
-            <IonTitle>Upload something</IonTitle>
-            <IonButtons slot='end'>
-              <IonButton onClick={() => setShowModal(false)}>Close</IonButton>
-            </IonButtons>
-          </IonToolbar>
-        </IonHeader>
-        <IonButton onClick={() => setShowModal(false)}>Close Modal</IonButton>
-      </IonModal>
-    </div>
+      <UploadAlbumModal
+        showModal={showModal}
+        onClose={() => {
+          setShowModal(false);
+        }}
+      />
+    </>
+  );
+};
+
+export const UploadAlbumModal = (props: {
+  showModal: boolean;
+  onClose: () => void;
+}) => {
+  const [name, setName] = useState("");
+
+  const handleSubmit = (event: any) => {
+    event.preventDefault();
+    props.onClose();
+
+    console.log(`Submitting Name ${name}`);
+    postNewAlbum();
+  };
+
+  async function postNewAlbum() {
+    await fetch(KURATE_API.AlbumList, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name }),
+    });
+  }
+
+  return (
+    <IonModal
+      isOpen={props.showModal}
+      swipeToClose={true}
+      onDidDismiss={props.onClose}
+    >
+      <IonHeader translucent>
+        <IonToolbar>
+          <IonTitle>Create a new album</IonTitle>
+          <IonButtons slot='end'>
+            <IonButton onClick={props.onClose}>Close</IonButton>
+          </IonButtons>
+        </IonToolbar>
+      </IonHeader>
+      <IonContent fullscreen>
+        <form onSubmit={handleSubmit}>
+          <IonList>
+            <IonItem>
+              <IonLabel position='floating'>Name</IonLabel>
+              <IonInput
+                value={name}
+                placeholder='Enter Input'
+                onIonChange={(e) => setName(e.detail.value!)}
+                clearInput
+              ></IonInput>
+            </IonItem>
+          </IonList>
+          <IonButton expand='block' type='submit'>
+            Create album
+          </IonButton>
+        </form>
+      </IonContent>
+    </IonModal>
   );
 };
 
