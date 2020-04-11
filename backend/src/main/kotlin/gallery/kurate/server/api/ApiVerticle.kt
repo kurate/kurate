@@ -94,5 +94,5 @@ class NotFoundException(message: String) : RuntimeException(message)
 fun Verticle.deployApiVerticle() {
   val deploymentOptions = DeploymentOptions()
     .setInstances(Runtime.getRuntime().availableProcessors())
-  vertx.deployVerticle(ApiVerticle(), deploymentOptions)
+  vertx.deployVerticle(ApiVerticle::class.java, deploymentOptions)
 }

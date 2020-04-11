@@ -53,5 +53,5 @@ fun Verticle.deployThumbnailCreatorVerticle() {
   val deploymentOptions = DeploymentOptions()
     .setInstances(Runtime.getRuntime().availableProcessors())
     .setWorker(true)
-  vertx.deployVerticle(ThumbnailCreatorVerticle(), deploymentOptions)
+  vertx.deployVerticle(ThumbnailCreatorVerticle::class.java, deploymentOptions)
 }
