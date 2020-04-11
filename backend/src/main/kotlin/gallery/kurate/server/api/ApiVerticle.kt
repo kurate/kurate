@@ -37,9 +37,15 @@ class ApiVerticle : AbstractVerticle(), KoinComponent {
 
     val ensureAlbumExistsHandler = ensureAlbumExistsHandler(albumRepository)
 
-    router.get("/api/*").handler(
-      CorsHandler.create("http://localhost:3000")
+    router.route("/api/*").handler(
+      CorsHandler.create("((http://)|(https://))localhost\\:\\d+")
         .allowedMethods(HttpMethod.values().toSet())
+        .allowedHeaders(setOf(
+          "Access-Control-Allow-Origin",
+          "Access-Control-Allow-Method",
+          "Access-Control-Allow-Credentials",
+          "Content-Type"
+        ))
     )
 
     router.post("/api/albums/:id")
