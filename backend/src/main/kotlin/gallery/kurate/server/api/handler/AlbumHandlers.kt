@@ -15,7 +15,6 @@ import io.reactivex.Observable
 import io.reactivex.schedulers.Schedulers
 import io.vertx.core.Handler
 import io.vertx.core.json.JsonArray
-import io.vertx.core.json.JsonObject
 import io.vertx.kotlin.core.json.get
 import io.vertx.kotlin.core.json.jsonObjectOf
 import io.vertx.reactivex.core.Vertx
@@ -50,19 +49,27 @@ internal fun uploadImagesToAlbumHandler(
     .subscribeOn(Schedulers.io())
     .flatMapMaybe { upload ->
       val imageFile = File(upload.uploadedFileName())
+      val fileName = upload.fileName()
       val imageUri = imageFile.inputStream().use(imageStore::putStream)
       photoRepository
-        .addPhoto(albumId, upload.fileName(), imageUri)
+        .addPhoto(albumId, fileName, imageUri)
         .switchIfEmpty(Maybe.error(NotFoundException("Album with id $albumId not found")))
-    }
-    .doOnNext { photo ->
-      vertx.eventBus().send(
-        THUMBNAIL_TOPIC,
-        jsonObjectOf(
-          KEY_IMAGE_ID to photo["_id"],
-          KEY_IMAGE_URI to context.host + "/api/i/" + photo["uri"]
-        )
-      )
+        .map { photo ->
+          jsonObjectOf(
+            "_id" to photo["_id"],
+            "file_name" to fileName,
+            "url" to context.host + "/api/i/" + imageUri
+          )
+        }
+        .doOnSuccess { photo ->
+          vertx.eventBus().send(
+            THUMBNAIL_TOPIC,
+            jsonObjectOf(
+              KEY_IMAGE_ID to photo["_id"],
+              KEY_IMAGE_URI to imageUri
+            )
+          )
+        }
     }
     .collectInto(JsonArray()) { array, photo ->
       array.add(photo)
