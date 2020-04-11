@@ -3,7 +3,6 @@ package gallery.kurate.server.database
 import io.reactivex.Maybe
 import io.reactivex.Single
 import io.vertx.core.json.JsonObject
-import io.vertx.kotlin.core.json.jsonArrayOf
 import io.vertx.kotlin.core.json.jsonObjectOf
 import io.vertx.reactivex.ext.mongo.MongoClient
 
