@@ -9,6 +9,7 @@ import io.reactivex.Completable
 import io.vertx.core.DeploymentOptions
 import io.vertx.core.Handler
 import io.vertx.core.Verticle
+import io.vertx.core.http.HttpMethod
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.api.validation.ValidationException
 import io.vertx.reactivex.core.AbstractVerticle
@@ -36,7 +37,10 @@ class ApiVerticle : AbstractVerticle(), KoinComponent {
 
     val ensureAlbumExistsHandler = ensureAlbumExistsHandler(albumRepository)
 
-    router.get("/api/*").handler(CorsHandler.create("http://localhost:8080"))
+    router.get("/api/*").handler(
+      CorsHandler.create("http://localhost:3000")
+        .allowedMethods(HttpMethod.values().toSet())
+    )
 
     router.post("/api/albums/:id")
       .handler(BodyHandler.create(true).setDeleteUploadedFilesOnEnd(true))
