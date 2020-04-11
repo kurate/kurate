@@ -32,7 +32,7 @@ const Album: React.FC = () => {
             <IonTitle size='large'>{id}</IonTitle>
           </IonToolbar>
         </IonHeader>
-        <AlbumContainer name={id} />
+        <AlbumContainer _id={id} />
       </IonContent>
     </IonPage>
   );

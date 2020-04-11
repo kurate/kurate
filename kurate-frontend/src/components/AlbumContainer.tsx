@@ -1,11 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./AlbumContainer.css";
 import {
   IonFab,
   IonFabButton,
   IonIcon,
   IonFabList,
-  IonContent,
   IonGrid,
   IonCol,
   IonRow,
@@ -17,6 +16,8 @@ import {
   IonButtons,
   IonTitle,
   IonCard,
+  IonLoading,
+  IonToast,
 } from "@ionic/react";
 import {
   share,
@@ -25,173 +26,92 @@ import {
   albumsOutline,
 } from "ionicons/icons";
 import { KURATE_URLS } from "../url";
+import { Album } from "./ExploreContainer";
+import { KURATE_API } from "../api";
 
-interface ContainerProps {
-  name: string;
+// TODO: Pass name
+interface AlbumProps {
+  _id: string;
 }
 
-// TODO: TEST DATA, FETCH FROM BACKEND INSTEAD
-const items = [
-  {
-    id: "id1",
-    name: "A day in the sky",
-    src:
-      "https://images.pexels.com/photos/682406/pexels-photo-682406.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
-    date: new Date("2020-01-01"),
-  },
-  {
-    id: "id2",
-    name: "A hoe in the garden",
-    src:
-      "https://images.pexels.com/photos/3584430/pexels-photo-3584430.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
-    date: new Date("2020-01-01"),
-  },
-  {
-    id: "id3",
-    name: "A walk in the park",
-    src:
-      "https://images.pexels.com/photos/1420701/pexels-photo-1420701.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
-    date: new Date("2020-01-01"),
-  },
-  {
-    id: "id4",
-    name: "A walk in the park",
-    src:
-      "https://images.pexels.com/photos/3820994/pexels-photo-3820994.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
-    date: new Date("2020-01-01"),
-  },
-  {
-    id: "id5",
-    name: "A walk in the park",
-    src:
-      "https://images.pexels.com/photos/1040161/pexels-photo-1040161.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
-    date: new Date("2020-01-01"),
-  },
-];
-
-const AlbumContainer: React.FC<ContainerProps> = () => {
+const AlbumContainer: React.FC<AlbumProps> = (props: AlbumProps) => {
   const [showModal, setShowModal] = useState(false);
+  const [loading, isLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [album, setAlbum] = useState<Album | undefined>();
+
+  useEffect(() => {
+    async function fetchAlbum() {
+      await fetch(KURATE_API.Album(props._id))
+        .then((res) => {
+          if (!res.ok) {
+            console.log("NOK: " + res);
+          }
+          return res.json();
+        })
+        .then((res) => {
+          setAlbum(res);
+          isLoading(false);
+        })
+        .catch((err) => {
+          console.log(err);
+          setError("Can't fetch.");
+          isLoading(false);
+        });
+    }
+
+    fetchAlbum();
+  });
+
+  // TODO: Use loading state instead
+  if (loading) {
+    return (
+      <IonLoading isOpen={loading} message={"Please wait..."} duration={5000} />
+    );
+  }
+
+  // TODO: ERROR STUFF
+  if (error != null) {
+    return (
+      <>
+        <h2>Error</h2>
+        <IonToast isOpen={true} message={error} />
+      </>
+    );
+  }
+  if (album == null) {
+    return (
+      <>
+        <h2>Error</h2>
+        <IonToast isOpen={true} message={"Error fetching"} />
+      </>
+    );
+  }
 
   return (
-    <IonContent id='single-album-content' fullscreen>
+    <div id='single-album-content'>
       <IonGrid>
         <IonRow>
           <IonCol>
             <IonCard routerLink={KURATE_URLS.Home}>
-              <IonImg src={items[0].src} />
+              <IonImg src={album.photos[0].uri} />
             </IonCard>
           </IonCol>
           <IonCol>
             <IonCard routerLink={KURATE_URLS.Home}>
-              <IonImg src={items[1].src} />
-            </IonCard>
-          </IonCol>
-        </IonRow>
-        <IonRow>
-          <IonCol>
-            <IonCard routerLink={KURATE_URLS.Home}>
-              <IonImg src={items[2].src} />
-            </IonCard>
-          </IonCol>
-          <IonCol>
-            <IonCard routerLink={KURATE_URLS.Home}>
-              <IonImg src={items[3].src} />
+              <IonImg src={album.photos[1].uri} />
             </IonCard>
           </IonCol>
         </IonRow>
         <IonRow>
           <IonCol>
             <IonCard routerLink={KURATE_URLS.Home}>
-              <IonImg src={items[0].src} />
+              <IonImg src={album.photos[2].uri} />
             </IonCard>
           </IonCol>
           <IonCol>
             <IonCard routerLink={KURATE_URLS.Home}>
-              <IonImg src={items[1].src} />
-            </IonCard>
-          </IonCol>
-        </IonRow>
-        <IonRow>
-          <IonCol>
-            <IonCard routerLink={KURATE_URLS.Home}>
-              <IonImg src={items[2].src} />
-            </IonCard>
-          </IonCol>
-          <IonCol>
-            <IonCard routerLink={KURATE_URLS.Home}>
-              <IonImg src={items[3].src} />
-            </IonCard>
-          </IonCol>
-        </IonRow>
-        <IonRow>
-          <IonCol>
-            <IonCard routerLink={KURATE_URLS.Home}>
-              <IonImg src={items[0].src} />
-            </IonCard>
-          </IonCol>
-          <IonCol>
-            <IonCard routerLink={KURATE_URLS.Home}>
-              <IonImg src={items[1].src} />
-            </IonCard>
-          </IonCol>
-        </IonRow>
-        <IonRow>
-          <IonCol>
-            <IonCard routerLink={KURATE_URLS.Home}>
-              <IonImg src={items[2].src} />
-            </IonCard>
-          </IonCol>
-          <IonCol>
-            <IonCard routerLink={KURATE_URLS.Home}>
-              <IonImg src={items[3].src} />
-            </IonCard>
-          </IonCol>
-        </IonRow>
-        <IonRow>
-          <IonCol>
-            <IonCard routerLink={KURATE_URLS.Home}>
-              <IonImg src={items[0].src} />
-            </IonCard>
-          </IonCol>
-          <IonCol>
-            <IonCard routerLink={KURATE_URLS.Home}>
-              <IonImg src={items[1].src} />
-            </IonCard>
-          </IonCol>
-        </IonRow>
-        <IonRow>
-          <IonCol>
-            <IonCard routerLink={KURATE_URLS.Home}>
-              <IonImg src={items[2].src} />
-            </IonCard>
-          </IonCol>
-          <IonCol>
-            <IonCard routerLink={KURATE_URLS.Home}>
-              <IonImg src={items[3].src} />
-            </IonCard>
-          </IonCol>
-        </IonRow>
-        <IonRow>
-          <IonCol>
-            <IonCard routerLink={KURATE_URLS.Home}>
-              <IonImg src={items[0].src} />
-            </IonCard>
-          </IonCol>
-          <IonCol>
-            <IonCard routerLink={KURATE_URLS.Home}>
-              <IonImg src={items[1].src} />
-            </IonCard>
-          </IonCol>
-        </IonRow>
-        <IonRow>
-          <IonCol>
-            <IonCard routerLink={KURATE_URLS.Home}>
-              <IonImg src={items[2].src} />
-            </IonCard>
-          </IonCol>
-          <IonCol>
-            <IonCard routerLink={KURATE_URLS.Home}>
-              <IonImg src={items[4].src} />
+              <IonImg src={album.photos[3].uri} />
             </IonCard>
           </IonCol>
         </IonRow>
@@ -229,7 +149,7 @@ const AlbumContainer: React.FC<ContainerProps> = () => {
         </IonHeader>
         <IonButton onClick={() => setShowModal(false)}>Close Modal</IonButton>
       </IonModal>
-    </IonContent>
+    </div>
   );
 };
 
