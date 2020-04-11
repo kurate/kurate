@@ -38,7 +38,7 @@ const App: React.FC = () => {
             <Route path={KURATE_URLS.Home + "/:id"} component={Album} exact />
             <Route path='/404' component={NotFound} exact />
             <Redirect to='/404' />
-            <Redirect from='/' to='/Albums' exact />
+            <Redirect from='/' to={KURATE_URLS.Home} exact />
           </IonRouterOutlet>
         </IonSplitPane>
       </IonReactRouter>

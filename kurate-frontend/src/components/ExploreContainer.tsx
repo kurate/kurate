@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./ExploreContainer.css";
 import {
   IonFab,
@@ -19,6 +19,8 @@ import {
   IonToolbar,
   IonButtons,
   IonTitle,
+  IonLoading,
+  IonToast,
 } from "@ionic/react";
 import {
   share,
@@ -27,6 +29,7 @@ import {
   albumsOutline,
 } from "ionicons/icons";
 import { KURATE_URLS } from "../url";
+import { KURATE_API } from "../api";
 
 interface ContainerProps {
   name: string;
@@ -59,141 +62,62 @@ export enum Size {
   LARGE = "LARGE",
 }
 
-// TODO: TEST DATA, FETCH FROM BACKEND INSTEAD
-const items: Album[] = [
-  {
-    _id: "id1",
-    name: "A day in the sky",
-    photos: [
-      {
-        _id: "photo1",
-        file_name: "cool.png",
-        uri:
-          "https://images.pexels.com/photos/682406/pexels-photo-682406.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
-        thumbnails: [
-          {
-            size: Size.MEDIUM,
-            dimension: 256,
-            uri:
-              "https://images.pexels.com/photos/682406/pexels-photo-682406.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
-          },
-        ],
-      },
-      {
-        _id: "photo2",
-        file_name: "cool.png",
-        uri:
-          "https://images.pexels.com/photos/3584430/pexels-photo-3584430.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
-        thumbnails: [
-          {
-            size: Size.MEDIUM,
-            dimension: 256,
-            uri:
-              "https://images.pexels.com/photos/3584430/pexels-photo-3584430.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
-          },
-        ],
-      },
-      {
-        _id: "photo3",
-        file_name: "cool.png",
-        uri:
-          "https://images.pexels.com/photos/1420701/pexels-photo-1420701.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
-        thumbnails: [
-          {
-            size: Size.MEDIUM,
-            dimension: 256,
-            uri:
-              "https://images.pexels.com/photos/1420701/pexels-photo-1420701.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
-          },
-        ],
-      },
-      {
-        _id: "photo4",
-        file_name: "cool.png",
-        uri:
-          "https://images.pexels.com/photos/3820994/pexels-photo-3820994.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
-        thumbnails: [
-          {
-            size: Size.MEDIUM,
-            dimension: 256,
-            uri:
-              "https://images.pexels.com/photos/3820994/pexels-photo-3820994.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
-          },
-        ],
-      },
-    ],
-    date: "2020-01-01",
-  },
-  {
-    _id: "id2",
-    name: "A hoe in the garden",
-    photos: [
-      {
-        _id: "photo2",
-        file_name: "cool.png",
-        uri:
-          "https://images.pexels.com/photos/3584430/pexels-photo-3584430.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
-        thumbnails: [
-          {
-            size: Size.MEDIUM,
-            dimension: 256,
-            uri:
-              "https://images.pexels.com/photos/3584430/pexels-photo-3584430.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
-          },
-        ],
-      },
-    ],
-    date: "2020-01-01",
-  },
-  {
-    _id: "id3",
-    name: "A walk in the park",
-    photos: [
-      {
-        _id: "photo3",
-        file_name: "cool.png",
-        uri:
-          "https://images.pexels.com/photos/1420701/pexels-photo-1420701.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
-        thumbnails: [
-          {
-            size: Size.MEDIUM,
-            dimension: 256,
-            uri:
-              "https://images.pexels.com/photos/1420701/pexels-photo-1420701.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
-          },
-        ],
-      },
-    ],
-    date: "2020-01-01",
-  },
-  {
-    _id: "id4",
-    name: "A walk in the park",
-    photos: [
-      {
-        _id: "photo4",
-        file_name: "cool.png",
-        uri:
-          "https://images.pexels.com/photos/3820994/pexels-photo-3820994.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
-        thumbnails: [
-          {
-            size: Size.MEDIUM,
-            dimension: 256,
-            uri:
-              "https://images.pexels.com/photos/3820994/pexels-photo-3820994.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
-          },
-        ],
-      },
-    ],
-    date: "2020-01-01",
-  },
-];
-
 const ExploreContainer: React.FC<ContainerProps> = () => {
   const [showModal, setShowModal] = useState(false);
+  const [loading, isLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [albums, setAlbums] = useState<Album[] | undefined>();
+
+  useEffect(() => {
+    async function fetchAlbums() {
+      await fetch(KURATE_API.AlbumList)
+        .then((res) => {
+          if (!res.ok) {
+            console.log("NOK: " + res);
+          }
+          return res.json();
+        })
+        .then((res) => {
+          setAlbums(res);
+          isLoading(false);
+        })
+        .catch((err) => {
+          console.log(err);
+          setError("Can't fetch.");
+          isLoading(false);
+        });
+    }
+
+    fetchAlbums();
+  });
+
+  // TODO: Use loading state instead
+  if (loading) {
+    return (
+      <IonLoading isOpen={loading} message={"Please wait..."} duration={5000} />
+    );
+  }
+
+  // TODO: ERROR STUFF
+  if (error != null) {
+    return (
+      <>
+        <h2>Error</h2>
+        <IonToast isOpen={true} message={error} />
+      </>
+    );
+  }
+  if (albums == null) {
+    return (
+      <>
+        <h2>Error</h2>
+        <IonToast isOpen={true} message={"Error fetching"} />
+      </>
+    );
+  }
 
   // TODO: Allow configureable multi column layout
-  const albums = items.map((item, index) => {
+  const albumCards = albums.map((item, index) => {
     return (
       <IonRow key={index}>
         <IonCol>
@@ -217,7 +141,7 @@ const ExploreContainer: React.FC<ContainerProps> = () => {
 
   return (
     <div id='albums-content'>
-      <IonGrid>{albums}</IonGrid>
+      <IonGrid>{albumCards}</IonGrid>
 
       <IonFab vertical='bottom' horizontal='end' slot='fixed'>
         <IonFabButton>
