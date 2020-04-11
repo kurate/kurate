@@ -101,7 +101,7 @@ const AlbumContainer: React.FC<AlbumProps> = (props: AlbumProps) => {
           return (
             <IonCol>
               <IonCard routerLink={KURATE_URLS.Home}>
-                <IonImg src={photo.uri} />
+                <IonImg src={KURATE_API.Image(photo.uri)} />
               </IonCard>
             </IonCol>
           );

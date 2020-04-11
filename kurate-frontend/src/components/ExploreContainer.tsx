@@ -128,7 +128,7 @@ const ExploreContainer: React.FC<ContainerProps> = () => {
             {item.photos != null && item.photos[0] != null ? (
               // TODO: Use animated skeleton below as loading indicator
               <IonImg
-                src={item.photos[0].uri}
+                src={KURATE_API.Image(item.photos[0].uri)}
                 onIonImgDidLoad={(e) => {
                   console.log(e);
                 }}
