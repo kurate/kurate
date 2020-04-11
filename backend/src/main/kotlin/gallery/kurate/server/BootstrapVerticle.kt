@@ -47,7 +47,6 @@ class BootstrapVerticle : AbstractVerticle() {
       vertx,
       jsonObjectOf(
         "db_name" to config.getString("db.name"),
-        "useObjectId" to config.getBoolean("db.useObjectId"),
         "connection_string" to config.getString("db.url")
       )
     )

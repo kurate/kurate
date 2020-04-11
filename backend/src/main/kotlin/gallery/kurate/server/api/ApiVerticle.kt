@@ -39,8 +39,8 @@ class ApiVerticle : AbstractVerticle(), KoinComponent {
     router.get("/api/*").handler(CorsHandler.create("http://localhost:8080"))
 
     router.post("/api/albums/:id")
-      .handler(ensureAlbumExistsHandler)
       .handler(BodyHandler.create(true).setDeleteUploadedFilesOnEnd(true))
+      .handler(ensureAlbumExistsHandler)
       .handler(uploadImagesToAlbumHandler(photoRepository, imageStore, vertx))
     router.get("/api/albums")
       .handler(getAllAlbumsHandler(albumRepository))

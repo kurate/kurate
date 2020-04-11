@@ -6,6 +6,8 @@ import gallery.kurate.server.database.ThumbnailRepository
 import gallery.kurate.server.ext.logger
 import gallery.kurate.server.model.ThumbnailSize
 import io.reactivex.Completable
+import io.reactivex.Observable
+import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
 import io.vertx.core.DeploymentOptions
 import io.vertx.core.Verticle
@@ -30,19 +32,19 @@ class ThumbnailCreatorVerticle : AbstractVerticle(), KoinComponent {
 
       logger.info("Creating thumbnail for image $imageId")
 
-      ThumbnailSize
-        .values()
-        .forEach { size ->
+      // TODO: handle the disposable
+      Observable.fromIterable(ThumbnailSize.values().asIterable())
+        .flatMapSingle { size ->
           val imageInputStream = imageStore.getStream(imageUri)
           val bytes = imageInputStream.use { it.createThumbnail(size.dimension) }
           val thumbnailUri = imageStore.put(bytes)
           thumbnailRepository.addThumbnail(imageId, size, size.dimension, thumbnailUri)
             .subscribeOn(Schedulers.io())
-            .subscribe(
-              { thumbnail -> logger.debug("created thumbnail ${thumbnail.encode()}") },
-              { throwable -> logger.error("Failed to create thumbnail", throwable) }
-            )
-        }
+            .flatMapSingle { Single.just(size) }
+        }.subscribe(
+          { size -> logger.debug("created $size thumbnail for $imageId") },
+          { throwable -> logger.error("Failed to create thumbnail", throwable) }
+        )
     }
   }
 }

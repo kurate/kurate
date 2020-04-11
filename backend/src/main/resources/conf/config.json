@@ -1,6 +1,5 @@
 {
   "http.port": 8338,
   "db.name": "kurate",
-  "db.url": "mongodb://root:password@mongo:27017/?authSource=admin",
-  "db.useObjectId": true
+  "db.url": "mongodb://root:password@mongo:27017/?authSource=admin"
 }
