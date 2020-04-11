@@ -15,7 +15,9 @@ import io.reactivex.Observable
 import io.reactivex.schedulers.Schedulers
 import io.vertx.core.Handler
 import io.vertx.core.json.JsonArray
+import io.vertx.core.json.JsonObject
 import io.vertx.kotlin.core.json.get
+import io.vertx.kotlin.core.json.jsonArrayOf
 import io.vertx.kotlin.core.json.jsonObjectOf
 import io.vertx.reactivex.core.Vertx
 import io.vertx.reactivex.ext.web.RoutingContext
@@ -85,6 +87,17 @@ internal fun uploadImagesToAlbumHandler(
 internal fun getAllAlbumsHandler(albumRepository: AlbumRepository) = Handler<RoutingContext> { context ->
   val disposable = albumRepository.getAllAlbums()
     .subscribeOn(Schedulers.io())
+    .map { albumsList ->
+      albumsList.map { album ->
+        val firstPhoto = album.getJsonArray("photos", jsonArrayOf()).firstOrNull()
+        if (firstPhoto != null && firstPhoto is JsonObject) {
+          album.remove("photos")
+          if (firstPhoto.containsKey("thumbnails"))
+            album.put("thumbnails", firstPhoto.getJsonArray("thumbnails"))
+        }
+        album
+      }
+    }
     .doOnError(context::fail)
     .subscribe { body -> context.endWithJson(body) }
   context.dispose(disposable)
