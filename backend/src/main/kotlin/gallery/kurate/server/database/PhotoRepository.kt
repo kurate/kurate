@@ -13,17 +13,27 @@ interface PhotoRepository {
 private const val collection = "albums"
 
 class MongoPhotoRepository(private val mongoClient: MongoClient) : PhotoRepository {
-  override fun addPhoto(albumId: String, fileName: String, uri: String) = mongoClient
-    .rxFindOneAndUpdate(
-      collection, jsonObjectOf("_id" to albumId),
-      jsonObjectOf(
-        "\$push" to jsonObjectOf(
-          "photos" to jsonObjectOf(
-            "_id" to ObjectId.get().toHexString(),
-            "fileName" to fileName,
-            "uri" to uri
-          )
+  override fun addPhoto(albumId: String, fileName: String, uri: String): Maybe<JsonObject> {
+    val photoId = ObjectId.get().toHexString()
+    return doAddPhoto(albumId, photoId, fileName, uri)
+      .map { jsonObjectOf("_id" to photoId) }
+  }
+
+  private fun doAddPhoto(
+    albumId: String,
+    photoId: String,
+    fileName: String,
+    uri: String
+  ) = mongoClient.rxFindOneAndUpdate(
+    collection, jsonObjectOf("_id" to albumId),
+    jsonObjectOf(
+      "\$push" to jsonObjectOf(
+        "photos" to jsonObjectOf(
+          "_id" to photoId,
+          "file_name" to fileName,
+          "uri" to uri
         )
       )
     )
+  )
 }
