@@ -15,7 +15,6 @@ import io.reactivex.Observable
 import io.reactivex.schedulers.Schedulers
 import io.vertx.core.Handler
 import io.vertx.core.json.JsonArray
-import io.vertx.core.json.JsonObject
 import io.vertx.kotlin.core.json.get
 import io.vertx.kotlin.core.json.jsonArrayOf
 import io.vertx.kotlin.core.json.jsonObjectOf
@@ -89,12 +88,12 @@ internal fun getAllAlbumsHandler(albumRepository: AlbumRepository) = Handler<Rou
     .subscribeOn(Schedulers.io())
     .map { albumsList ->
       albumsList.map { album ->
-        val firstPhoto = album.getJsonArray("photos", jsonArrayOf()).firstOrNull()
-        if (firstPhoto != null && firstPhoto is JsonObject) {
-          album.remove("photos")
-          if (firstPhoto.containsKey("thumbnails"))
-            album.put("thumbnails", firstPhoto.getJsonArray("thumbnails"))
+        val photos = album.getJsonArray("photos", jsonArrayOf())
+        if (!photos.isEmpty) {
+          val newPhotos = jsonArrayOf(photos.first())
+          album.put("photos", newPhotos)
         }
+
         album
       }
     }
