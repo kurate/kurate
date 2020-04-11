@@ -101,7 +101,8 @@ const AlbumContainer: React.FC<AlbumProps> = (props: AlbumProps) => {
           return (
             <IonCol>
               <IonCard routerLink={KURATE_URLS.Home}>
-                <IonImg src={KURATE_API.Image(photo.uri)} />
+                {/* TODO: CHECK THUMBNAILS NULL OR EMPTY */}
+                <IonImg src={KURATE_API.Image(photo.thumbnails[1].uri)} />
               </IonCard>
             </IonCol>
           );

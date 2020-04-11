@@ -127,8 +127,9 @@ const ExploreContainer: React.FC<ContainerProps> = () => {
           <IonCard routerLink={KURATE_URLS.Album(item._id)}>
             {item.photos != null && item.photos[0] != null ? (
               // TODO: Use animated skeleton below as loading indicator
+              // TODO: CHECK THUMBNAILS NULL OR EMPTY
               <IonImg
-                src={KURATE_API.Image(item.photos[0].uri)}
+                src={KURATE_API.Image(item.photos[0].thumbnails[1].uri)}
                 onIonImgDidLoad={(e) => {
                   console.log(e);
                 }}
