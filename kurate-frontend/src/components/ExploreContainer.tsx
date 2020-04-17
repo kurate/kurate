@@ -73,26 +73,26 @@ const ExploreContainer: React.FC<ContainerProps> = () => {
   const [error, setError] = useState("");
   const [albums, setAlbums] = useState<Album[] | undefined>();
 
-  useEffect(() => {
-    async function fetchAlbums() {
-      await fetch(KURATE_API.AlbumList)
-        .then((res) => {
-          if (!res.ok) {
-            console.log("NOK: " + res);
-          }
-          return res.json();
-        })
-        .then((res) => {
-          setAlbums(res);
-          isLoading(false);
-        })
-        .catch((err) => {
-          console.log("Fetch error: " + err);
-          setError("Can't fetch.");
-          isLoading(false);
-        });
-    }
+  async function fetchAlbums() {
+    await fetch(KURATE_API.AlbumList)
+      .then((res) => {
+        if (!res.ok) {
+          console.log("NOK: " + res);
+        }
+        return res.json();
+      })
+      .then((res) => {
+        setAlbums(res);
+        isLoading(false);
+      })
+      .catch((err) => {
+        console.log("Fetch error: " + err);
+        setError("Can't fetch.");
+        isLoading(false);
+      });
+  }
 
+  useEffect(() => {
     fetchAlbums();
   }, []);
 
@@ -129,7 +129,7 @@ const ExploreContainer: React.FC<ContainerProps> = () => {
               // TODO: Use animated skeleton below as loading indicator
               // TODO: CHECK THUMBNAILS NULL OR EMPTY
               <IonImg
-                src={KURATE_API.Image(item.photos[0].thumbnails[1].uri)}
+                src={KURATE_API.Image(item.photos[0].uri)}
                 onIonImgDidLoad={(e) => {
                   console.log(e);
                 }}
@@ -175,6 +175,7 @@ const ExploreContainer: React.FC<ContainerProps> = () => {
         showModal={showModal}
         onClose={() => {
           setShowModal(false);
+          fetchAlbums();
         }}
       />
     </>

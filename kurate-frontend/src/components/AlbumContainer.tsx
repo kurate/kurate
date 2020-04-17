@@ -18,18 +18,10 @@ import {
   IonTitle,
   IonCard,
   IonLoading,
-  IonInput,
   IonContent,
-  IonList,
-  IonItem,
-  IonLabel,
+  IonCardContent,
 } from "@ionic/react";
-import {
-  share,
-  imageOutline,
-  searchOutline,
-  albumsOutline,
-} from "ionicons/icons";
+import { share, imageOutline, searchOutline } from "ionicons/icons";
 import { KURATE_URLS } from "../url";
 import { Album } from "./ExploreContainer";
 import { KURATE_API } from "../api";
@@ -45,27 +37,28 @@ const AlbumContainer: React.FC<AlbumProps> = (props: AlbumProps) => {
   const [error, setError] = useState("");
   const [album, setAlbum] = useState<Album | undefined>();
 
-  useEffect(() => {
-    async function fetchAlbum() {
-      await fetch(KURATE_API.Album(props._id))
-        .then((res) => {
-          if (!res.ok) {
-            console.log("NOK: " + res);
-          }
-          return res.json();
-        })
-        .then((res) => {
-          setAlbum(res);
-          isLoading(false);
-        })
-        .catch((err) => {
-          console.log(err);
-          setError("Can't fetch.");
-          isLoading(false);
-        });
-    }
+  async function fetchAlbum() {
+    await fetch(KURATE_API.Album(props._id))
+      .then((res) => {
+        if (!res.ok) {
+          console.log("NOK: " + res);
+        }
+        return res.json();
+      })
+      .then((res) => {
+        setAlbum(res);
+        isLoading(false);
+      })
+      .catch((err) => {
+        console.log(err);
+        setError("Can't fetch.");
+        isLoading(false);
+      });
+  }
 
+  useEffect(() => {
     fetchAlbum();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props._id]);
 
   // TODO: Use loading state instead
@@ -94,15 +87,15 @@ const AlbumContainer: React.FC<AlbumProps> = (props: AlbumProps) => {
 
   const chunked = chunk(album.photos, 2);
 
-  const rows = chunked.map((chunk, index) => {
+  const rows = chunked.map((chunk) => {
     return (
       <IonRow>
-        {chunk.map((photo, index) => {
+        {chunk.map((photo) => {
           return (
             <IonCol>
-              <IonCard routerLink={KURATE_URLS.Home}>
+              <IonCard routerLink={KURATE_URLS.Image(photo.uri)}>
                 {/* TODO: CHECK THUMBNAILS NULL OR EMPTY */}
-                <IonImg src={KURATE_API.Image(photo.thumbnails[1].uri)} />
+                <IonImg src={KURATE_API.Image(photo.uri)} />
               </IonCard>
             </IonCol>
           );
@@ -124,9 +117,9 @@ const AlbumContainer: React.FC<AlbumProps> = (props: AlbumProps) => {
           <IonIcon icon={share} />
         </IonFabButton>
         <IonFabList side='start'>
-          <IonFabButton>
+          {/* <IonFabButton>
             <IonIcon icon={albumsOutline} onClick={() => setShowModal(true)} />
-          </IonFabButton>
+          </IonFabButton> */}
           <IonFabButton>
             <IonIcon icon={imageOutline} onClick={() => setShowModal(true)} />
           </IonFabButton>
@@ -136,38 +129,51 @@ const AlbumContainer: React.FC<AlbumProps> = (props: AlbumProps) => {
         </IonFabList>
       </IonFab>
 
-      <UploadAlbumModal
+      <UploadImageModal
+        album={album}
         showModal={showModal}
         onClose={() => {
           setShowModal(false);
+          fetchAlbum();
         }}
       />
     </>
   );
 };
 
-export const UploadAlbumModal = (props: {
+export const UploadImageModal = (props: {
   showModal: boolean;
+  album: Album;
   onClose: () => void;
 }) => {
-  const [name, setName] = useState("");
+  // Files for desktop
+  const [files, setFiles] = useState<File[]>([]);
+
+  // TODO: Fix capacitor camera input (Or drop it if we're fine with form input)
+  // For app / capacitor camera input
+  const [pictures] = useState([]);
 
   const handleSubmit = (event: any) => {
     event.preventDefault();
     props.onClose();
 
-    console.log(`Submitting Name ${name}`);
-    postNewAlbum();
+    console.log(`Submitting`);
+    console.log(files);
+    console.log(pictures);
+
+    postImagesToAlbum(files);
   };
 
-  async function postNewAlbum() {
-    await fetch(KURATE_API.AlbumList, {
+  async function postImagesToAlbum(_files: File[]) {
+    const formData = new FormData();
+
+    files.forEach((f) => {
+      formData.append(f.name, f);
+    });
+
+    await fetch(KURATE_API.Album(props.album._id), {
       method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ name }),
+      body: formData,
     });
   }
 
@@ -185,21 +191,43 @@ export const UploadAlbumModal = (props: {
           </IonButtons>
         </IonToolbar>
       </IonHeader>
-      <IonContent fullscreen>
+      <IonContent className='upload-modal-content'>
         <form onSubmit={handleSubmit}>
-          <IonList>
-            <IonItem>
-              <IonLabel position='floating'>Name</IonLabel>
-              <IonInput
-                value={name}
-                placeholder='Enter Input'
-                onIonChange={(e) => setName(e.detail.value!)}
-                clearInput
-              ></IonInput>
-            </IonItem>
-          </IonList>
+          <>
+            <label className='custom-file-upload' htmlFor='file-upload'>
+              <IonCard>
+                <IonCardContent>Upload new images</IonCardContent>
+              </IonCard>
+            </label>
+            <input
+              id='file-upload'
+              type='file'
+              name='image'
+              accept='image/*'
+              multiple
+              style={{ display: "none" }}
+              onChange={(e) => {
+                console.log(e.target.files);
+                if (e.target.files && e.target.files != null) {
+                  setFiles(files.concat(Array.from(e.target.files)));
+                  console.log(e.target.files);
+                } else {
+                  console.log("file error");
+                }
+              }}
+            />
+          </>
+          {/* TODO: Show the uploaded pictures here */}
+          {/* {pictures.map((pic) => {
+            return (
+              <IonCard>
+                <h2>{pic}</h2>
+                <IonImg src={""} />
+              </IonCard>
+            );
+          })} */}
           <IonButton expand='block' type='submit'>
-            Create album
+            Upload images
           </IonButton>
         </form>
       </IonContent>
