@@ -87,7 +87,6 @@ internal fun getAllAlbumsHandler(albumRepository: AlbumRepository) = Handler<Rou
         if (!photos.isEmpty) {
           val firstPhoto = photos.first() as JsonObject
           firstPhoto.remove("exif")
-          firstPhoto.remove("thumbnails")
           val newPhotos = jsonArrayOf(firstPhoto)
           album.put("photos", newPhotos)
         }
