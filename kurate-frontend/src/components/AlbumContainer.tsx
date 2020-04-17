@@ -107,7 +107,13 @@ const AlbumContainer: React.FC<AlbumProps> = (props: AlbumProps) => {
   return (
     <>
       {album.photos == null || album.photos.length < 1 ? (
-        <h2>No photos yet.</h2>
+        <div style={{ margin: "10px" }}>
+          <h2>This album does not contain any photos yet.</h2>
+          <IonButton onClick={() => setShowModal(true)}>
+            <IonIcon slot='start' icon={share} />
+            Upload something
+          </IonButton>
+        </div>
       ) : (
         <IonGrid>{rows}</IonGrid>
       )}

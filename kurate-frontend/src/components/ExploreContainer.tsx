@@ -196,6 +196,7 @@ export const UploadAlbumModal = (props: {
     postNewAlbum();
   };
 
+  // TODO: Use the response instead of just refetching after posting
   async function postNewAlbum() {
     await fetch(KURATE_API.AlbumList, {
       method: "POST",
