@@ -4,6 +4,7 @@ import co.selim.gimbap.BinaryStore
 import co.selim.gimbap.api.StreamingStore
 import gallery.kurate.server.api.deployApiVerticle
 import gallery.kurate.server.database.*
+import gallery.kurate.server.worker.deployExifExtractorVerticle
 import gallery.kurate.server.worker.deployThumbnailCreatorVerticle
 import io.reactivex.plugins.RxJavaPlugins
 import io.vertx.core.json.JsonObject
@@ -39,6 +40,7 @@ class BootstrapVerticle : AbstractVerticle() {
 
       deployApiVerticle()
       deployThumbnailCreatorVerticle()
+      deployExifExtractorVerticle()
     }
     .ignoreElement()
 
@@ -66,6 +68,12 @@ class BootstrapVerticle : AbstractVerticle() {
 
       single<ThumbnailRepository> {
         MongoThumbnailRepository(
+          mongoClient
+        )
+      }
+
+      single<ExifRepository> {
+        MongoExifRepository(
           mongoClient
         )
       }

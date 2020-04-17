@@ -16,19 +16,15 @@ import io.vertx.reactivex.core.AbstractVerticle
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 
-const val THUMBNAIL_TOPIC = "thumbnailPlease"
-const val KEY_IMAGE_ID = "imageId"
-const val KEY_IMAGE_URI = "imageUri"
-
 class ThumbnailCreatorVerticle : AbstractVerticle(), KoinComponent {
   private val thumbnailRepository by inject<ThumbnailRepository>()
   private val imageStore by inject<StreamingStore<ByteArray>>()
 
   override fun rxStart() = Completable.fromRunnable {
-    vertx.eventBus().consumer<JsonObject>(THUMBNAIL_TOPIC) { message ->
-      val thumbnailRequest = message.body()
-      val imageId = thumbnailRequest.getString(KEY_IMAGE_ID)
-      val imageUri = thumbnailRequest.getString(KEY_IMAGE_URI)
+    vertx.eventBus().consumer<JsonObject>(PROCESSING_TOPIC_THUMBNAIL) { message ->
+      val request = message.body().toProcessingRequest()
+      val imageId = request.imageId
+      val imageUri = request.imageUri
 
       logger.info("Creating thumbnail for image $imageId")
 
@@ -39,13 +35,16 @@ class ThumbnailCreatorVerticle : AbstractVerticle(), KoinComponent {
           val bytes = imageInputStream.use { it.createThumbnail(size.dimension) }
           val thumbnailUri = imageStore.put(bytes)
           thumbnailRepository.addThumbnail(imageId, size, size.dimension, thumbnailUri)
-            .subscribeOn(Schedulers.io())
             .flatMapSingle { Single.just(size) }
-        }.subscribe(
-          { size -> logger.debug("created $size thumbnail for $imageId") },
+        }
+        .subscribeOn(Schedulers.io())
+        .subscribe(
+          { size -> logger.info("created $size thumbnail for $imageId") },
           { throwable -> logger.error("Failed to create thumbnail", throwable) }
         )
     }
+  }.doOnComplete {
+    logger.info("Deployed ${this::class.java.simpleName}")
   }
 }
 

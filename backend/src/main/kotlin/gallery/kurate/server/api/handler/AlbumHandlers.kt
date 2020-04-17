@@ -6,15 +6,15 @@ import gallery.kurate.server.database.AlbumRepository
 import gallery.kurate.server.database.PhotoRepository
 import gallery.kurate.server.ext.dispose
 import gallery.kurate.server.ext.endWithJson
-import gallery.kurate.server.ext.host
-import gallery.kurate.server.worker.KEY_IMAGE_ID
-import gallery.kurate.server.worker.KEY_IMAGE_URI
-import gallery.kurate.server.worker.THUMBNAIL_TOPIC
+import gallery.kurate.server.worker.PROCESSING_TOPICS
+import gallery.kurate.server.worker.ProcessingRequest
+import gallery.kurate.server.worker.toJsonObject
 import io.reactivex.Maybe
 import io.reactivex.Observable
 import io.reactivex.schedulers.Schedulers
 import io.vertx.core.Handler
 import io.vertx.core.json.JsonArray
+import io.vertx.core.json.JsonObject
 import io.vertx.kotlin.core.json.get
 import io.vertx.kotlin.core.json.jsonArrayOf
 import io.vertx.kotlin.core.json.jsonObjectOf
@@ -59,17 +59,12 @@ internal fun uploadImagesToAlbumHandler(
           jsonObjectOf(
             "_id" to photo["_id"],
             "file_name" to fileName,
-            "url" to context.host + "/api/i/" + imageUri
+            "uri" to imageUri
           )
         }
         .doOnSuccess { photo ->
-          vertx.eventBus().send(
-            THUMBNAIL_TOPIC,
-            jsonObjectOf(
-              KEY_IMAGE_ID to photo["_id"],
-              KEY_IMAGE_URI to imageUri
-            )
-          )
+          val processingRequest = ProcessingRequest(photo["_id"], imageUri).toJsonObject()
+          PROCESSING_TOPICS.forEach { vertx.eventBus().send(it, processingRequest) }
         }
     }
     .collectInto(JsonArray()) { array, photo ->
@@ -90,7 +85,10 @@ internal fun getAllAlbumsHandler(albumRepository: AlbumRepository) = Handler<Rou
       albumsList.map { album ->
         val photos = album.getJsonArray("photos", jsonArrayOf())
         if (!photos.isEmpty) {
-          val newPhotos = jsonArrayOf(photos.first())
+          val firstPhoto = photos.first() as JsonObject
+          firstPhoto.remove("exif")
+          firstPhoto.remove("thumbnails")
+          val newPhotos = jsonArrayOf(firstPhoto)
           album.put("photos", newPhotos)
         }
 

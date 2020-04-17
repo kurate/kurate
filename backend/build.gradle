@@ -17,10 +17,11 @@ ext {
   junitJupiterEngineVersion = '5.5.2'
   vertxVersion = '3.9.0'
   rxKotlinVersion = '2.4.0'
-  mariaDbClientVersion = '2.5.3'
   slf4jVersion = '1.7.30'
   gimbapVersion = '3.0.0'
   thumbnail4jVersion = "2.0.2"
+  exiftool4jVersion = "2.0.0"
+  koinVersion = "2.1.5"
 }
 
 application {
@@ -46,8 +47,9 @@ dependencies {
   implementation "io.reactivex.rxjava2:rxkotlin:$rxKotlinVersion"
   implementation "com.github.wowselim:gimbap:$gimbapVersion"
   implementation "com.github.wowselim:thumbnail4j:$thumbnail4jVersion"
+  implementation "com.github.wowselim:exiftool4j:$exiftool4jVersion"
 
-  implementation "org.koin:koin-core:2.0.1"
+  implementation "org.koin:koin-core:$koinVersion"
 
   // logging
   compileOnly "org.slf4j:slf4j-api:$slf4jVersion"
