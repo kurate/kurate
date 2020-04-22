@@ -48,7 +48,7 @@ class ThumbnailCreatorVerticle : AbstractVerticle(), KoinComponent {
   }
 }
 
-fun Verticle.deployThumbnailCreatorVerticle() {
+fun Verticle.deployThumbnailCreatorVerticle() = Completable.fromRunnable {
   val deploymentOptions = DeploymentOptions()
     .setInstances(Runtime.getRuntime().availableProcessors())
     .setWorker(true)

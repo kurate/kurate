@@ -44,7 +44,7 @@ class ExifExtractorVerticle : AbstractVerticle(), KoinComponent {
   }
 }
 
-fun Verticle.deployExifExtractorVerticle() {
+fun Verticle.deployExifExtractorVerticle() = Completable.fromRunnable {
   val deploymentOptions = DeploymentOptions()
     .setInstances(Runtime.getRuntime().availableProcessors())
     .setWorker(true)

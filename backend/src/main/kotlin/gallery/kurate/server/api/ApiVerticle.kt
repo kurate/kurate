@@ -10,8 +10,6 @@ import io.vertx.core.DeploymentOptions
 import io.vertx.core.Handler
 import io.vertx.core.Verticle
 import io.vertx.core.http.HttpMethod
-import io.vertx.core.json.JsonObject
-import io.vertx.ext.web.api.validation.ValidationException
 import io.vertx.reactivex.core.AbstractVerticle
 import io.vertx.reactivex.ext.web.Router
 import io.vertx.reactivex.ext.web.RoutingContext
@@ -23,7 +21,7 @@ import org.koin.core.KoinComponent
 import org.koin.core.inject
 
 class ApiVerticle : AbstractVerticle(), KoinComponent {
-  private val config by inject<JsonObject>()
+  private val config by inject<ApiConfig>()
   private val imageStore by inject<StreamingStore<ByteArray>>()
   private val albumRepository by inject<AlbumRepository>()
   private val photoRepository by inject<PhotoRepository>()
@@ -40,23 +38,25 @@ class ApiVerticle : AbstractVerticle(), KoinComponent {
     router.route("/api/*").handler(
       CorsHandler.create("((http://)|(https://))localhost\\:\\d+")
         .allowedMethods(HttpMethod.values().toSet())
-        .allowedHeaders(setOf(
-          "Access-Control-Allow-Origin",
-          "Access-Control-Allow-Method",
-          "Access-Control-Allow-Credentials",
-          "Content-Type"
-        ))
+        .allowedHeaders(
+          setOf(
+            "Access-Control-Allow-Origin",
+            "Access-Control-Allow-Method",
+            "Access-Control-Allow-Credentials",
+            "Content-Type"
+          )
+        )
     )
 
     router.post("/api/albums/:id")
       .handler(BodyHandler.create(true).setDeleteUploadedFilesOnEnd(true))
       .handler(ensureAlbumExistsHandler)
-      .handler(uploadImagesToAlbumHandler(photoRepository, imageStore, vertx))
+      .handler(uploadImagesToAlbumHandler(photoRepository, imageStore, config.host))
     router.get("/api/albums")
-      .handler(getAllAlbumsHandler(albumRepository))
+      .handler(getAllAlbumsHandler(albumRepository, config.host))
     router.get("/api/albums/:id")
       .handler(ensureAlbumExistsHandler)
-      .handler(getAlbumByIdHandler(albumRepository))
+      .handler(getAlbumByIdHandler(albumRepository, config.host))
     router.post("/api/albums")
       .handler(BodyHandler.create(false))
       .handler(postAlbumHandler(albumRepository))
@@ -64,18 +64,16 @@ class ApiVerticle : AbstractVerticle(), KoinComponent {
     router.get("/api/i/:uri")
       .handler(getImageHandler(imageStore))
 
-    val port = config.getInteger("http.port")
     return vertx.createHttpServer()
       .requestHandler(router)
-      .rxListen(port)
-      .doOnSuccess { logger.info("Kurate running on port $port") }
+      .rxListen(config.port, config.host)
+      .doOnSuccess { logger.info("Kurate running on port ${it.actualPort()}") }
       .ignoreElement()
   }
 
   private val failureHandler = Handler<RoutingContext> { context ->
     val cause = context.failure()
     val responseData = when (cause) {
-      is ValidationException -> 400 to "Malformed parameter: ${cause.parameterName()}"
       is NotFoundException -> 404 to ""
       else -> {
         if (context.statusCode() in 400..499)
@@ -101,7 +99,7 @@ class ApiVerticle : AbstractVerticle(), KoinComponent {
 
 class NotFoundException(message: String) : RuntimeException(message)
 
-fun Verticle.deployApiVerticle() {
+fun Verticle.deployApiVerticle() = Completable.fromRunnable {
   val deploymentOptions = DeploymentOptions()
     .setInstances(Runtime.getRuntime().availableProcessors())
   vertx.deployVerticle(ApiVerticle::class.java, deploymentOptions)
