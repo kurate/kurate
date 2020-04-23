@@ -8,7 +8,6 @@ import gallery.kurate.server.api.deployApiVerticle
 import gallery.kurate.server.database.*
 import gallery.kurate.server.worker.deployExifExtractorVerticle
 import gallery.kurate.server.worker.deployThumbnailCreatorVerticle
-import io.reactivex.Completable
 import io.reactivex.plugins.RxJavaPlugins
 import io.vertx.core.json.JsonObject
 import io.vertx.core.json.jackson.DatabindCodec
@@ -44,13 +43,9 @@ class BootstrapVerticle : AbstractVerticle() {
 
       startKoin { modules(listOf(configModule, persistenceModule)) }
 
-      Completable.concat(
-        listOf(
-          deployApiVerticle(),
-          deployThumbnailCreatorVerticle(),
-          deployExifExtractorVerticle()
-        )
-      )
+      deployApiVerticle()
+        .andThen(deployThumbnailCreatorVerticle())
+        .andThen(deployExifExtractorVerticle())
     }
 
   private fun getPersistenceModule(config: JsonObject): Module {

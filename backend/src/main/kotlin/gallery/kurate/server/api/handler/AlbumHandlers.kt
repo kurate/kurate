@@ -55,9 +55,9 @@ internal fun uploadImagesToAlbumHandler(
       photoRepository
         .addPhoto(albumId, fileName, imageUri)
         .switchIfEmpty(Maybe.error(NotFoundException("Album with id $albumId not found")))
-        .map { photo ->
+        .map { result ->
           val photo = jsonObjectOf(
-            "_id" to photo["_id"],
+            "_id" to result["_id"],
             "file_name" to fileName,
             "uri" to imageUri
           )
@@ -69,9 +69,7 @@ internal fun uploadImagesToAlbumHandler(
           PROCESSING_TOPICS.forEach { context.vertx().eventBus().send(it, processingRequest) }
         }
     }
-    .collectInto(JsonArray()) { array, photo ->
-      array.add(photo)
-    }
+    .collectInto(JsonArray()) { array, photo -> array.add(photo) }
     .subscribe { photos, throwable ->
       photos?.let { body -> context.endWithJson(body) }
       throwable?.let(context::fail)

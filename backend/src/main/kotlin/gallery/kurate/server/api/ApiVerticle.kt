@@ -48,15 +48,17 @@ class ApiVerticle : AbstractVerticle(), KoinComponent {
         )
     )
 
+    val host = "${config.host}:${config.port}"
+
     router.post("/api/albums/:id")
       .handler(BodyHandler.create(true).setDeleteUploadedFilesOnEnd(true))
       .handler(ensureAlbumExistsHandler)
-      .handler(uploadImagesToAlbumHandler(photoRepository, imageStore, config.host))
+      .handler(uploadImagesToAlbumHandler(photoRepository, imageStore, host))
     router.get("/api/albums")
-      .handler(getAllAlbumsHandler(albumRepository, config.host))
+      .handler(getAllAlbumsHandler(albumRepository, host))
     router.get("/api/albums/:id")
       .handler(ensureAlbumExistsHandler)
-      .handler(getAlbumByIdHandler(albumRepository, config.host))
+      .handler(getAlbumByIdHandler(albumRepository, host))
     router.post("/api/albums")
       .handler(BodyHandler.create(false))
       .handler(postAlbumHandler(albumRepository))
