@@ -101,18 +101,6 @@ internal fun getAllAlbumsHandler(albumRepository: AlbumRepository, host: String)
   context.dispose(disposable)
 }
 
-private fun populateUrls(photo: JsonObject, host: String) {
-  photo.put("url", buildImageUrl(host, photo.getString("uri")))
-  photo.remove("uri")
-  val thumbnails = photo.getJsonArray("thumbnails", jsonArrayOf())
-  for (thumbnail in thumbnails) {
-    if (thumbnail is JsonObject) {
-      thumbnail.put("url", buildImageUrl(host, thumbnail.getString("uri")))
-      thumbnail.remove("uri")
-    }
-  }
-}
-
 internal fun getAlbumByIdHandler(
   albumRepository: AlbumRepository,
   host: String
