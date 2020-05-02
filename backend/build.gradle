@@ -17,10 +17,12 @@ ext {
   junitJupiterEngineVersion = '5.5.2'
   vertxVersion = '3.9.0'
   rxKotlinVersion = '2.4.0'
-  mariaDbClientVersion = '2.5.3'
   slf4jVersion = '1.7.30'
   gimbapVersion = '3.0.0'
-  thumbnail4jVersion = "2.0.2"
+  thumbnail4jVersion = '2.0.2'
+  exiftool4jVersion = '2.0.0'
+  koinVersion = '2.1.5'
+  jacksonVersion = '2.10.3'
 }
 
 application {
@@ -38,24 +40,20 @@ dependencies {
   implementation "io.vertx:vertx-config:$vertxVersion"
   implementation "io.vertx:vertx-rx-java2:$vertxVersion"
   implementation "io.vertx:vertx-web:$vertxVersion"
-  implementation "io.vertx:vertx-web-api-contract:$vertxVersion"
-  implementation "io.vertx:vertx-web-templ-handlebars:$vertxVersion"
   implementation "io.vertx:vertx-mongo-client:$vertxVersion"
   implementation "io.vertx:vertx-lang-kotlin:$vertxVersion"
 
   implementation "io.reactivex.rxjava2:rxkotlin:$rxKotlinVersion"
   implementation "com.github.wowselim:gimbap:$gimbapVersion"
   implementation "com.github.wowselim:thumbnail4j:$thumbnail4jVersion"
+  implementation "com.github.wowselim:exiftool4j:$exiftool4jVersion"
 
-  implementation "org.koin:koin-core:2.0.1"
+  implementation "org.koin:koin-core:$koinVersion"
+  implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
 
   // logging
   compileOnly "org.slf4j:slf4j-api:$slf4jVersion"
   runtimeOnly "org.slf4j:slf4j-simple:$slf4jVersion"
-
-  testImplementation "io.vertx:vertx-junit5:$vertxVersion"
-  testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitJupiterEngineVersion"
-  testImplementation "org.junit.jupiter:junit-jupiter-api:$junitJupiterEngineVersion"
 }
 
 compileKotlin {

@@ -2,22 +2,23 @@ package gallery.kurate.server.api.handler
 
 import co.selim.gimbap.api.StreamingStore
 import gallery.kurate.server.api.NotFoundException
+import gallery.kurate.server.api.buildImageUrl
 import gallery.kurate.server.database.AlbumRepository
 import gallery.kurate.server.database.PhotoRepository
 import gallery.kurate.server.ext.dispose
 import gallery.kurate.server.ext.endWithJson
-import gallery.kurate.server.ext.host
-import gallery.kurate.server.worker.KEY_IMAGE_ID
-import gallery.kurate.server.worker.KEY_IMAGE_URI
-import gallery.kurate.server.worker.THUMBNAIL_TOPIC
+import gallery.kurate.server.worker.PROCESSING_TOPICS
+import gallery.kurate.server.worker.ProcessingRequest
+import gallery.kurate.server.worker.toJsonObject
 import io.reactivex.Maybe
 import io.reactivex.Observable
 import io.reactivex.schedulers.Schedulers
 import io.vertx.core.Handler
 import io.vertx.core.json.JsonArray
+import io.vertx.core.json.JsonObject
 import io.vertx.kotlin.core.json.get
+import io.vertx.kotlin.core.json.jsonArrayOf
 import io.vertx.kotlin.core.json.jsonObjectOf
-import io.vertx.reactivex.core.Vertx
 import io.vertx.reactivex.ext.web.RoutingContext
 import java.io.File
 
@@ -39,7 +40,7 @@ internal fun ensureAlbumExistsHandler(albumRepository: AlbumRepository) = Handle
 internal fun uploadImagesToAlbumHandler(
   photoRepository: PhotoRepository,
   imageStore: StreamingStore<ByteArray>,
-  vertx: Vertx
+  host: String
 ) = Handler<RoutingContext> { context ->
   val albumId = context.pathParam("id")
   val uploads = context.fileUploads()
@@ -54,26 +55,21 @@ internal fun uploadImagesToAlbumHandler(
       photoRepository
         .addPhoto(albumId, fileName, imageUri)
         .switchIfEmpty(Maybe.error(NotFoundException("Album with id $albumId not found")))
-        .map { photo ->
-          jsonObjectOf(
-            "_id" to photo["_id"],
+        .map { result ->
+          val photo = jsonObjectOf(
+            "_id" to result["_id"],
             "file_name" to fileName,
-            "url" to context.host + "/api/i/" + imageUri
+            "uri" to imageUri
           )
+          populateUrls(photo, host)
+          photo
         }
         .doOnSuccess { photo ->
-          vertx.eventBus().send(
-            THUMBNAIL_TOPIC,
-            jsonObjectOf(
-              KEY_IMAGE_ID to photo["_id"],
-              KEY_IMAGE_URI to imageUri
-            )
-          )
+          val processingRequest = ProcessingRequest(photo["_id"], imageUri).toJsonObject()
+          PROCESSING_TOPICS.forEach { context.vertx().eventBus().send(it, processingRequest) }
         }
     }
-    .collectInto(JsonArray()) { array, photo ->
-      array.add(photo)
-    }
+    .collectInto(JsonArray()) { array, photo -> array.add(photo) }
     .subscribe { photos, throwable ->
       photos?.let { body -> context.endWithJson(body) }
       throwable?.let(context::fail)
@@ -82,16 +78,43 @@ internal fun uploadImagesToAlbumHandler(
   context.dispose(disposable)
 }
 
-internal fun getAllAlbumsHandler(albumRepository: AlbumRepository) = Handler<RoutingContext> { context ->
+internal fun getAllAlbumsHandler(albumRepository: AlbumRepository, host: String) = Handler<RoutingContext> { context ->
   val disposable = albumRepository.getAllAlbums()
     .subscribeOn(Schedulers.io())
+    .map { albumsList ->
+      albumsList.map { album ->
+        val photos = album.getJsonArray("photos", jsonArrayOf())
+        if (!photos.isEmpty) {
+          val firstPhoto = photos.first() as JsonObject
+          populateUrls(firstPhoto, host)
+          firstPhoto.remove("exif")
+          val newPhotos = jsonArrayOf(firstPhoto)
+          album.put("photos", newPhotos)
+        }
+
+        album
+      }
+    }
     .doOnError(context::fail)
     .subscribe { body -> context.endWithJson(body) }
   context.dispose(disposable)
 }
 
+private fun populateUrls(photo: JsonObject, host: String) {
+  photo.put("url", buildImageUrl(host, photo.getString("uri")))
+  photo.remove("uri")
+  val thumbnails = photo.getJsonArray("thumbnails", jsonArrayOf())
+  for (thumbnail in thumbnails) {
+    if (thumbnail is JsonObject) {
+      thumbnail.put("url", buildImageUrl(host, thumbnail.getString("uri")))
+      thumbnail.remove("uri")
+    }
+  }
+}
+
 internal fun getAlbumByIdHandler(
-  albumRepository: AlbumRepository
+  albumRepository: AlbumRepository,
+  host: String
 ) =
   Handler<RoutingContext> { context ->
     val albumId = context.request().getParam("id")
@@ -99,6 +122,10 @@ internal fun getAlbumByIdHandler(
       .subscribeOn(Schedulers.io())
       .switchIfEmpty(Maybe.error(NotFoundException("Album with id $albumId not found")))
       .doOnError(context::fail)
+      .map { album ->
+        album.getJsonArray("photos")
+          .also { it.forEach { photo -> populateUrls((photo as JsonObject), host) } }
+      }
       .subscribe { albums -> context.endWithJson(albums) }
 
     context.dispose(disposable)

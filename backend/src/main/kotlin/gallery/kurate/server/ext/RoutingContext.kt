@@ -14,15 +14,3 @@ fun RoutingContext.endWithJson(body: Any, statusCode: Int = 200) = response()
 fun RoutingContext.notFound() = response()
   .setStatusCode(404)
   .end()
-
-/*
-fun RoutingContext.noContent() = response()
-  .setStatusCode(204)
-  .end()
-*/
-
-val RoutingContext.host: String
-  get() = "$protocol://" + request().host()
-
-private val RoutingContext.protocol: String
-  get() = if (request().sslSession() == null) "http" else "https"
