@@ -20,11 +20,12 @@ import {
   IonLoading,
   IonContent,
   IonCardContent,
+  IonFooter,
 } from "@ionic/react";
 import { share, imageOutline, searchOutline } from "ionicons/icons";
-import { KURATE_URLS } from "../url";
 import { Album } from "./ExploreContainer";
 import { KURATE_API } from "../api";
+import { KURATE_URLS } from "../url";
 
 // TODO: Pass name
 interface AlbumProps {
@@ -93,9 +94,9 @@ const AlbumContainer: React.FC<AlbumProps> = (props: AlbumProps) => {
         {chunk.map((photo) => {
           return (
             <IonCol>
-              <IonCard routerLink={KURATE_URLS.Image(photo.uri)}>
+              <IonCard routerLink={KURATE_URLS.Image(photo._id)}>
                 {/* TODO: CHECK THUMBNAILS NULL OR EMPTY */}
-                <IonImg src={KURATE_API.Image(photo.uri)} />
+                <IonImg src={KURATE_API.ImageUrl(photo.url)} />
               </IonCard>
             </IonCol>
           );
@@ -108,11 +109,15 @@ const AlbumContainer: React.FC<AlbumProps> = (props: AlbumProps) => {
     <>
       {album.photos == null || album.photos.length < 1 ? (
         <div style={{ margin: "10px" }}>
-          <h2>This album does not contain any photos yet.</h2>
-          <IonButton onClick={() => setShowModal(true)}>
-            <IonIcon slot='start' icon={share} />
-            Upload something
-          </IonButton>
+          <IonCard>
+            <IonCardContent>
+              <h2>This album does not contain any photos yet.</h2>
+              <IonButton onClick={() => setShowModal(true)}>
+                <IonIcon slot='start' icon={share} />
+                Upload something
+              </IonButton>
+            </IonCardContent>
+          </IonCard>
         </div>
       ) : (
         <IonGrid>{rows}</IonGrid>
@@ -177,10 +182,14 @@ export const UploadImageModal = (props: {
       formData.append(f.name, f);
     });
 
+    console.log(props.album);
+
     await fetch(KURATE_API.Album(props.album._id), {
       method: "POST",
       body: formData,
     });
+
+    setFiles([]);
   }
 
   return (
@@ -188,21 +197,22 @@ export const UploadImageModal = (props: {
       isOpen={props.showModal}
       swipeToClose={true}
       onDidDismiss={props.onClose}
+      cssClass='upload-modal'
     >
       <IonHeader translucent>
         <IonToolbar>
-          <IonTitle>Upload new photo</IonTitle>
+          <IonTitle>Upload photos</IonTitle>
           <IonButtons slot='end'>
             <IonButton onClick={props.onClose}>Close</IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
-      <IonContent className='upload-modal-content'>
-        <form onSubmit={handleSubmit}>
-          <>
+      <form onSubmit={handleSubmit}>
+        <>
+          <IonContent className='upload-modal-content'>
             <label className='custom-file-upload' htmlFor='file-upload'>
               <IonCard>
-                <IonCardContent>Upload new images</IonCardContent>
+                <IonCardContent>Add images...</IonCardContent>
               </IonCard>
             </label>
             <input
@@ -213,30 +223,34 @@ export const UploadImageModal = (props: {
               multiple
               style={{ display: "none" }}
               onChange={(e) => {
-                console.log(e.target.files);
                 if (e.target.files && e.target.files != null) {
                   setFiles(files.concat(Array.from(e.target.files)));
-                  console.log(e.target.files);
                 } else {
                   console.log("file error");
                 }
               }}
             />
-          </>
-          {/* TODO: Show the uploaded pictures here */}
-          {/* {pictures.map((pic) => {
-            return (
-              <IonCard>
-                <h2>{pic}</h2>
-                <IonImg src={""} />
-              </IonCard>
-            );
-          })} */}
-          <IonButton expand='block' type='submit'>
-            Upload images
-          </IonButton>
-        </form>
-      </IonContent>
+
+            {/* Show the uploaded pictures here */}
+            {files.map((pic, index) => {
+              return (
+                <IonCard key={index}>
+                  <IonImg src={URL.createObjectURL(pic)} />
+                </IonCard>
+              );
+            })}
+          </IonContent>
+          <IonFooter>
+            <IonToolbar>
+              <div className='upload-modal-footer'>
+                <IonButton expand='block' type='submit'>
+                  Upload {files.length} images
+                </IonButton>
+              </div>
+            </IonToolbar>
+          </IonFooter>
+        </>
+      </form>
     </IonModal>
   );
 };

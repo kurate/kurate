@@ -10,3 +10,11 @@ ion-col ion-card {
 .upload-modal-content form {
   margin: 10px;
 }
+
+.upload-modal-footer {
+  margin: 10px;
+}
+
+.upload-modal form {
+  display: contents;
+}

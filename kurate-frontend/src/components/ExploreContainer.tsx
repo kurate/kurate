@@ -44,13 +44,13 @@ export interface Album {
   _id: string;
   name: string;
   photos: Photo[];
-  date: string;
+  created_at: number;
 }
 
 export interface Photo {
   _id: string;
   file_name: string;
-  uri: string;
+  url: string;
   thumbnails: Thumbnail[];
 }
 
@@ -129,7 +129,7 @@ const ExploreContainer: React.FC<ContainerProps> = () => {
               // TODO: Use animated skeleton below as loading indicator
               // TODO: CHECK THUMBNAILS NULL OR EMPTY
               <IonImg
-                src={KURATE_API.Image(item.photos[0].uri)}
+                src={KURATE_API.ImageUrl(item.photos[0].url)}
                 onIonImgDidLoad={(e) => {
                   console.log(e);
                 }}
@@ -140,7 +140,7 @@ const ExploreContainer: React.FC<ContainerProps> = () => {
             )}
             <IonCardHeader>
               <IonCardSubtitle>
-                From {new Date(item.date).toLocaleDateString()}
+                From {new Date(item.created_at).toLocaleDateString()}
               </IonCardSubtitle>
               <IonCardTitle>{item.name}</IonCardTitle>
             </IonCardHeader>
