@@ -2,12 +2,16 @@ package gallery.kurate.server
 
 import co.selim.gimbap.BinaryStore
 import co.selim.gimbap.api.StreamingStore
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import gallery.kurate.server.api.ApiConfig
 import gallery.kurate.server.api.deployApiVerticle
 import gallery.kurate.server.database.*
 import gallery.kurate.server.worker.deployExifExtractorVerticle
 import gallery.kurate.server.worker.deployThumbnailCreatorVerticle
 import io.reactivex.plugins.RxJavaPlugins
 import io.vertx.core.json.JsonObject
+import io.vertx.core.json.jackson.DatabindCodec
+import io.vertx.kotlin.core.json.get
 import io.vertx.kotlin.core.json.jsonObjectOf
 import io.vertx.reactivex.config.ConfigRetriever
 import io.vertx.reactivex.core.AbstractVerticle
@@ -21,6 +25,7 @@ import java.nio.file.Paths
 
 class BootstrapVerticle : AbstractVerticle() {
   init {
+    DatabindCodec.mapper().apply { registerKotlinModule() }
     RxJavaPlugins.setComputationSchedulerHandler { RxHelper.scheduler(vertx) }
     RxJavaPlugins.setIoSchedulerHandler { RxHelper.blockingScheduler(vertx) }
     RxJavaPlugins.setNewThreadSchedulerHandler { RxHelper.scheduler(vertx) }
@@ -29,27 +34,26 @@ class BootstrapVerticle : AbstractVerticle() {
   override fun rxStart() = ConfigRetriever
     .create(vertx)
     .rxGetConfig()
-    .doOnSuccess { config ->
+    .flatMapCompletable { config ->
       val configModule = module {
-        single { config }
+        single<ApiConfig> { config.getJsonObject("http").mapTo(ApiConfig::class.java) }
       }
 
-      val persistenceModule = getPersistenceModule(config)
+      val persistenceModule = getPersistenceModule(config["db"])
 
       startKoin { modules(listOf(configModule, persistenceModule)) }
 
       deployApiVerticle()
-      deployThumbnailCreatorVerticle()
-      deployExifExtractorVerticle()
+        .andThen(deployThumbnailCreatorVerticle())
+        .andThen(deployExifExtractorVerticle())
     }
-    .ignoreElement()
 
   private fun getPersistenceModule(config: JsonObject): Module {
     val mongoClient = MongoClient.createShared(
       vertx,
       jsonObjectOf(
-        "db_name" to config.getString("db.name"),
-        "connection_string" to config.getString("db.url")
+        "db_name" to config.getString("name"),
+        "connection_string" to config.getString("url")
       )
     )
 
