@@ -21,6 +21,7 @@ import io.vertx.kotlin.core.json.jsonArrayOf
 import io.vertx.kotlin.core.json.jsonObjectOf
 import io.vertx.reactivex.ext.web.RoutingContext
 import java.io.File
+import java.time.Instant
 
 internal fun ensureAlbumExistsHandler(albumRepository: AlbumRepository) = Handler<RoutingContext> { context ->
   val albumId = context.pathParam("id")
@@ -123,17 +124,18 @@ internal fun getAlbumByIdHandler(
       .switchIfEmpty(Maybe.error(NotFoundException("Album with id $albumId not found")))
       .doOnError(context::fail)
       .map { album ->
-        album.getJsonArray("photos")
+        album.getJsonArray("photos", jsonArrayOf())
           .also { it.forEach { photo -> populateUrls((photo as JsonObject), host) } }
+        album
       }
-      .subscribe { albums -> context.endWithJson(albums) }
+      .subscribe { album -> context.endWithJson(album) }
 
     context.dispose(disposable)
   }
 
 internal fun postAlbumHandler(albumRepository: AlbumRepository) = Handler<RoutingContext> { context ->
   val jsonAlbum = context.bodyAsJson
-  val disposable = albumRepository.createAlbum(jsonAlbum.getString("name"))
+  val disposable = albumRepository.createAlbum(jsonAlbum["name"], Instant.now())
     .subscribeOn(Schedulers.io())
     .doOnError(context::fail)
     .subscribe { album -> context.endWithJson(album, 201) }
