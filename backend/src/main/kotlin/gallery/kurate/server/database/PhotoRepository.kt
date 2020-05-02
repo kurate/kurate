@@ -8,6 +8,7 @@ import org.bson.types.ObjectId
 
 interface PhotoRepository {
   fun addPhoto(albumId: String, fileName: String, uri: String): Maybe<JsonObject>
+  fun getPhotoById(id: String): Maybe<JsonObject>
 }
 
 private const val collection = "albums"
@@ -18,6 +19,9 @@ class MongoPhotoRepository(private val mongoClient: MongoClient) : PhotoReposito
     return doAddPhoto(albumId, photoId, fileName, uri)
       .map { jsonObjectOf("_id" to photoId) }
   }
+
+  override fun getPhotoById(id: String): Maybe<JsonObject> = mongoClient
+    .rxFindOne(collection, jsonObjectOf("photos._id" to id), null)
 
   private fun doAddPhoto(
     albumId: String,
