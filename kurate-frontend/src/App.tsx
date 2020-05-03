@@ -26,6 +26,7 @@ import "@ionic/react/css/display.css";
 
 /* Theme variables */
 import "./theme/variables.css";
+import ImageView from "./pages/ImageView";
 
 const App: React.FC = () => {
   return (
@@ -36,6 +37,11 @@ const App: React.FC = () => {
           <IonRouterOutlet id='main'>
             <Route path={KURATE_URLS.Home} component={Home} exact />
             <Route path={KURATE_URLS.Home + "/:id"} component={Album} exact />
+            <Route
+              path={KURATE_URLS.Image_Base + "/:uri"}
+              component={ImageView}
+              exact
+            />
             <Route path='/404' component={NotFound} exact />
             <Redirect to='/404' />
             <Redirect from='/' to={KURATE_URLS.Home} exact />

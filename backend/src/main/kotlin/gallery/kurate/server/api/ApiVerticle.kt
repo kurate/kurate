@@ -63,6 +63,9 @@ class ApiVerticle : AbstractVerticle(), KoinComponent {
       .handler(BodyHandler.create(false))
       .handler(postAlbumHandler(albumRepository))
 
+    router.get("/api/photos/:id")
+      .handler(getPhotoByIdHandler(photoRepository, host))
+
     router.get("/api/i/:uri")
       .handler(getImageHandler(imageStore))
 

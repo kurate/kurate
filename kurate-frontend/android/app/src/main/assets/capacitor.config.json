@@ -1,0 +1,8 @@
+{
+  "appId": "gallery.kurate",
+  "appName": "kurate",
+  "bundledWebRuntime": false,
+  "npmClient": "npm",
+  "webDir": "build",
+  "cordova": {}
+}
